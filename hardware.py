@@ -5,7 +5,7 @@ import numpy as np
 import logging
 
 # Configure logging
-logging.basicConfig(filename='/home/pi/printer_data/logs/sensett.log', level=logging.INFO)
+logging.basicConfig(filename='~/printer_data/logs/sensett.log', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Supported sensor classes and their metadata
