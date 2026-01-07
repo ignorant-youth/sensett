@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 from hardware import create_sensor, FanConfig, MQTTSensor, SUPPORTED_SENSORS
 
 # Logging configuration
-logging.basicConfig(filename='~/printer_data/logs/sensett.log', level=logging.DEBUG)
+logging.basicConfig(filename='sensett.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Configuration file path
@@ -44,7 +44,10 @@ MQTT_BROKER = config.get('MQTT_BROKER', 'localhost')
 MQTT_PORT = config.get('MQTT_PORT', 1883)
 
 def setup_mqtt_client(broker, port):
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    if hasattr(mqtt, "CallbackAPIVersion"):
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+    else:
+        client = mqtt.Client()
     client.connect(broker, port, 60)
     return client
 
@@ -106,6 +109,9 @@ def process_data():
                         trigger_value = trigger_sensor.aqi
                     elif sensor_type == 'SHT31Sensor':
                         trigger_value = trigger_sensor.temp
+                    
+                    logger.debug(f"Trigger sensor value for fan '{fan.name}': {trigger_value}")
+
                     if trigger_value is not None:
                         fan.check_and_update_fan_speed(trigger_value)
 

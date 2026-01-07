@@ -83,16 +83,13 @@ install_dependencies() {
     sudo apt-get update
 
     echo "Installing required packages..."
-    sudo apt-get install -y python3 python3-pip python3-smbus i2c-tools jq
-
-    echo "Installing required Python packages..."
-    pip3 install smbus2 numpy requests paho-mqtt adafruit-circuitpython-typing
+    sudo apt-get install -y python3 python3-pip python3-smbus python3-paho-mqtt python3-smbus2 i2c-tools jq lsof python3-numpy python3-requests mosquitto mosquitto-clients
 }
 
 check_dependencies() {
     print_header
     echo "Checking dependencies..."
-    if ! dpkg -s python3 python3-pip python3-smbus i2c-tools jq >/dev/null 2>&1 || ! pip3 show smbus2 numpy requests paho-mqtt adafruit-circuitpython-typing >/dev/null 2>&1; then
+    if ! dpkg -s python3 python3-pip python3-smbus python3-smbus2 python3-paho-mqtt i2c-tools jq lsof python3-numpy python3-requests mosquitto mosquitto-clients >/dev/null 2>&1 ; then
         clear
         print_header
         echo "Dependencies are not fully installed. Would you like to install them? (y/n)"
@@ -111,24 +108,41 @@ check_dependencies() {
 }
 
 create_service() {
-    SERVICE_FILE_PATH="/etc/systemd/system/sensett.service"
+    local SERVICE_FILE_PATH="/etc/systemd/system/sensett.service"
 
-    echo "[Unit]
+    # Prefer the user who invoked sudo; fallback to current user.
+    local INSTALL_USER="${SUDO_USER:-$USER}"
+
+    # Ensure these are absolute paths when your script sets them.
+    # PYTHON_EXEC="/usr/bin/python3"
+    # SCRIPT_DIR="/home/whatever/sensett"
+
+    sudo tee "$SERVICE_FILE_PATH" > /dev/null <<EOF
+[Unit]
 Description=Sensett Service
-After=multi-user.target
+Wants=network-online.target
+After=network-online.target
+# If using a local broker, uncomment the next two lines:
+# Wants=mosquitto.service
+# After=mosquitto.service
 
 [Service]
-ExecStart=$PYTHON_EXEC $SCRIPT_DIR/main.py
-Restart=always
-User=pi
+Type=simple
+User=${INSTALL_USER}
+WorkingDirectory=${SCRIPT_DIR}
+Environment=PYTHONUNBUFFERED=1
+ExecStart=${PYTHON_EXEC} ${SCRIPT_DIR}/main.py
+Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=multi-user.target" | sudo tee $SERVICE_FILE_PATH > /dev/null
+WantedBy=multi-user.target
+EOF
 
     sudo systemctl daemon-reload
-    sudo systemctl enable sensett.service
-    sudo systemctl start sensett.service
+    sudo systemctl enable --now sensett.service
 }
+
 
 check_service() {
     echo "Checking for Sensett service..."
