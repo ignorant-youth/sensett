@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 from hardware import create_sensor, FanConfig, MQTTSensor, SUPPORTED_SENSORS
 
 # Logging configuration
-logging.basicConfig(filename='/home/pi/printer_data/logs/sensett.log', level=logging.DEBUG)
+logging.basicConfig(filename='~/printer_data/logs/sensett.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Configuration file path
